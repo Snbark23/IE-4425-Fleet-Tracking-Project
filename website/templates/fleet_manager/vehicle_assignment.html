@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Vehicle Assignment{% endblock %}
+{% block content %}
+<div class="container mt-4">
+
+  <h2 class="text-center mb-4">Vehicle Assignment</h2>
+
+  <!-- Assignment Form (Centered Card) -->
+  <div class="row justify-content-center">
+    <div class="col-md-6">
+      <div class="card shadow-sm">
+        <div class="card-header bg-info text-white font-weight-bold">Select Vehicle</div>
+        <div class="card-body">
+          <form method="POST">
+            <div class="form-group">
+              <label for="vehicle_id">Vehicle</label>
+              <select name="vehicle_id" class="form-control" required>
+                {% for vehicle in vehicles %}
+                  <option value="{{ vehicle.id }}">{{ vehicle.make }} {{ vehicle.model }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="driver_id">Driver</label>
+              <select name="driver_id" class="form-control" required>
+                {% for driver in drivers %}
+                  <option value="{{ driver.id }}">{{ driver.first_name }} {{ driver.last_name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <button type="submit" class="btn btn-info mt-2">Assign Vehicle</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Assignment Table (Centered and Styled) -->
+  <div class="row justify-content-center mt-5">
+    <div class="col-md-10">
+      <div class="card shadow-sm">
+        <div class="card-header bg-info text-white font-weight-bold">Current Assignments</div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead class="thead-dark">
+                <tr>
+                  <th>Driver Name</th>
+                  <th>Vehicle</th>
+                  <th>Assignment Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for assignment in assignments %}
+                  <tr>
+                    <td>
+                      {% for driver in drivers %}
+                        {% if driver.id == assignment.driver_id %}
+                          {{ driver.first_name }} {{ driver.last_name }}
+                        {% endif %}
+                      {% endfor %}
+                    </td>
+                    <td>
+                      {% for vehicle in vehicles %}
+                        {% if vehicle.id == assignment.vehicle_id %}
+                          {{ vehicle.make }} {{ vehicle.model }} ({{ vehicle.vin }})
+                        {% endif %}
+                      {% endfor %}
+                    </td>
+                    <td>{{ assignment.assignment_date.strftime('%Y-%m-%d') }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

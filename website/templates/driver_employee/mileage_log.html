@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Mileage Log{% endblock %}
+{% block content %}
+<div class="container mt-4">
+  <h2>Mileage Log</h2>
+  <form method="POST" class="mb-4">
+    <div class="form-group">
+      <label>Vehicle</label>
+      <select name="vehicle_id" class="form-control" required>
+        {% for vehicle in vehicles %}
+          <option value="{{ vehicle.id }}">{{ vehicle.make }} {{ vehicle.model }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Miles Driven</label>
+      <input type="number" step="0.1" name="miles_driven" class="form-control" required>
+    </div>
+    <button type="submit" class="btn btn-success mt-2">Log Miles</button>
+  </form>
+
+  <h4>Log History</h4>
+  <ul class="list-group">
+    {% for log in mileage_logs %}
+      <li class="list-group-item">
+        {{ log.date }} — {{ log.miles_driven }} miles
+      </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

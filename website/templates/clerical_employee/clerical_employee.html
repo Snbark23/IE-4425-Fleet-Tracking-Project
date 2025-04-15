@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Clerical Employee Portal{% endblock %}
+{% block content %}
+<div class="container mt-4">
+  <h2 class="text-center">Clerical Employee Portal</h2>
+  <div class="row">
+
+    <!-- Maintenance Events -->
+    <div class="col-md-4">
+      <div class="card mb-4">
+        <div class="card-header bg-info text-white">Maintenance Events</div>
+        <div class="card-body">
+          <p>Log and review vehicle maintenance history.</p>
+          <a href="{{ url_for('views.maintenance_events') }}" class="btn btn-info">Go</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Document Upload -->
+    <div class="col-md-4">
+      <div class="card mb-4">
+        <div class="card-header bg-warning text-dark">Document Upload</div>
+        <div class="card-body">
+          <p>Upload and view important documents.</p>
+          <a href="{{ url_for('views.upload_document') }}" class="btn btn-warning">Go</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Placeholder for Future Features -->
+    <div class="col-md-4">
+      <div class="card mb-4">
+        <div class="card-header bg-secondary text-white">Coming Soon</div>
+        <div class="card-body">
+          <p>Additional features for clerical employees.</p>
+          <a href="#" class="btn btn-secondary disabled">Go</a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

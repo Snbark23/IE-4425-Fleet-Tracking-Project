@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Vehicle Identification{% endblock %}
+{% block content %}
+<div class="container mt-4">
+  <h2 class="text-center">Vehicle Identification</h2>
+  <table class="table table-striped mt-3">
+    <thead class="thead-dark">
+      <tr>
+        <th>VIN</th>
+        <th>Make</th>
+        <th>Model</th>
+        <th>Year</th>
+        <th>Engine</th>
+        <th>Displacement</th>
+        <th>Cylinders</th>
+        <th>Fuel</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for v in vehicles %}
+      <tr>
+        <td>{{ v.vin }}</td>
+        <td>{{ v.make }}</td>
+        <td>{{ v.model }}</td>
+        <td>{{ v.year }}</td>
+        <td>{{ v.engine_type }}</td>
+        <td>{{ v.displacement }}</td>
+        <td>{{ v.cylinders }}</td>
+        <td>{{ v.fuel_type }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

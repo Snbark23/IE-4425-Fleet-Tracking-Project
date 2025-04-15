@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Incident Report{% endblock %}
+{% block content %}
+<div class="container mt-4">
+  <h2>Incident Report</h2>
+  <form method="POST" class="mb-4">
+    <div class="form-group">
+      <label>Vehicle</label>
+      <select name="vehicle_id" class="form-control" required>
+        {% for vehicle in vehicles %}
+          <option value="{{ vehicle.id }}">{{ vehicle.make }} {{ vehicle.model }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Description</label>
+      <textarea name="description" class="form-control" rows="4" required></textarea>
+    </div>
+    <button type="submit" class="btn btn-warning mt-2">Submit</button>
+  </form>
+
+  <h4>Submitted Reports</h4>
+  <ul class="list-group">
+    {% for report in incidents %}
+      <li class="list-group-item">
+        {{ report.date }} — {{ report.description }}
+      </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

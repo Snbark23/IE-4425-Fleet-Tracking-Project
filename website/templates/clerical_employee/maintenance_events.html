@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Maintenance Events{% endblock %}
+{% block content %}
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-10">
+
+      <!-- Maintenance Form -->
+      <div class="card shadow-lg mb-4">
+        <div class="card-header bg-info text-white text-center">
+          <h4 class="mb-0">Log Maintenance Event</h4>
+        </div>
+        <div class="card-body">
+          <form method="POST">
+            <div class="mb-3">
+              <label for="vehicle_id" class="form-label">Select Vehicle</label>
+              <select name="vehicle_id" id="vehicle_id" class="form-select" required>
+                {% for vehicle in vehicles %}
+                  <option value="{{ vehicle.id }}">{{ vehicle.make }} {{ vehicle.model }} ({{ vehicle.vin }})</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="mb-3">
+              <label for="description" class="form-label">Description</label>
+              <textarea name="description" id="description" class="form-control" rows="3" required></textarea>
+            </div>
+
+            <div class="mb-3">
+              <label for="maintenance_date" class="form-label">Date</label>
+              <input type="date" name="maintenance_date" id="maintenance_date" class="form-control" required>
+            </div>
+
+            <div class="mb-3">
+              <label for="cost" class="form-label">Cost ($)</label>
+              <input type="number" name="cost" id="cost" class="form-control" step="0.01" required>
+            </div>
+
+            <div class="text-center">
+              <button type="submit" class="btn btn-primary">Add Maintenance</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Maintenance Event List -->
+      <div class="card shadow-sm">
+        <div class="card-header bg-secondary text-white text-center">
+          <h5 class="mb-0">Maintenance History</h5>
+        </div>
+        <ul class="list-group list-group-flush">
+          {% for event in events %}
+          <li class="list-group-item">
+            <strong>{{ event.maintenance_date.strftime('%Y-%m-%d') }}</strong> - 
+            <em>{{ event.description }}</em><br>
+            <span class="text-muted">Vehicle ID: {{ event.vehicle_id }} | Cost: ${{ event.cost }}</span>
+          </li>
+          {% else %}
+          <li class="list-group-item text-muted text-center">No maintenance records found.</li>
+          {% endfor %}
+        </ul>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Driver Employee Portal{% endblock %}
+{% block content %}
+<h2 class="text-center">Driver Employee Portal</h2>
+<div class="container mt-4">
+  <div class="row">
+
+    <!-- Fuel Log -->
+    <div class="col-md-3">
+      <div class="card">
+        <div class="card-header bg-warning text-dark">Fuel Log</div>
+        <div class="card-body">
+          <p>Log vehicle fueling activities.</p>
+          <a href="{{ url_for('views.fuel_log') }}" class="btn btn-warning btn-sm">Go</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Incident Report -->
+    <div class="col-md-3">
+      <div class="card">
+        <div class="card-header bg-secondary text-white">Incident Report</div>
+        <div class="card-body">
+          <p>Report vehicle incidents.</p>
+          <a href="{{ url_for('views.incident_report') }}" class="btn btn-secondary btn-sm">Go</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Accident Report -->
+    <div class="col-md-3">
+      <div class="card">
+        <div class="card-header bg-danger text-white">Accident Report</div>
+        <div class="card-body">
+          <p>Report accidents involving vehicles.</p>
+          <a href="{{ url_for('views.accident_report') }}" class="btn btn-danger btn-sm">Go</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mileage Log -->
+    <div class="col-md-3">
+      <div class="card">
+        <div class="card-header bg-success text-white">Mileage Log</div>
+        <div class="card-body">
+          <p>Log vehicle mileage.</p>
+          <a href="{{ url_for('views.mileage_log') }}" class="btn btn-success btn-sm">Go</a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

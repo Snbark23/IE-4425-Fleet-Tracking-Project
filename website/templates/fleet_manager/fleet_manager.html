@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Fleet Manager Portal{% endblock %}
+{% block content %}
+<h2 class="text-center">Fleet Manager Portal</h2>
+<div class="container mt-4">
+  <div class="row">
+
+    <!-- Vehicle Identification -->
+    <div class="col-md-3">
+      <div class="card">
+        <div class="card-header bg-primary text-white">Vehicle Identification</div>
+        <div class="card-body">
+          <p>Identify and manage vehicle details.</p>
+          <a href="{{ url_for('views.vehicle_identification') }}" class="btn btn-primary btn-sm">Go</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Registration -->
+    <div class="col-md-3">
+      <div class="card">
+        <div class="card-header bg-success text-white">Vehicle Registration</div>
+        <div class="card-body">
+          <p>Register new fleet vehicles.</p>
+          <a href="{{ url_for('views.vehicle_registration') }}" class="btn btn-success btn-sm">Go</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Decommission -->
+    <div class="col-md-3">
+      <div class="card">
+        <div class="card-header bg-danger text-white">Vehicle Decommission</div>
+        <div class="card-body">
+          <p>Decommission old fleet vehicles.</p>
+          <a href="{{ url_for('views.vehicle_decommission') }}" class="btn btn-danger btn-sm">Go</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Assignment -->
+    <div class="col-md-3">
+      <div class="card">
+        <div class="card-header bg-info text-white">Vehicle Assignment</div>
+        <div class="card-body">
+          <p>Assign vehicles to drivers.</p>
+          <a href="{{ url_for('views.vehicle_assignment') }}" class="btn btn-info btn-sm">Go</a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

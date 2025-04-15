@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Vehicle Decommission{% endblock %}
+{% block content %}
+<div class="container mt-4">
+  <h2 class="text-center">Decommission Vehicle</h2>
+  <form method="POST" class="mt-4">
+    <div class="form-group">
+      <label>Select Vehicle</label>
+      <select name="vehicle_id" class="form-control">
+        {% for v in vehicles %}
+        <option value="{{ v.id }}">{{ v.vin }} - {{ v.make }} {{ v.model }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="btn btn-danger">Decommission</button>
+  </form>
+</div>
+{% endblock %}
