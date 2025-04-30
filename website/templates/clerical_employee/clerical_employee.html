@@ -3,6 +3,29 @@
 {% block content %}
 <div class="container mt-4">
   <h2 class="text-center">Clerical Employee Portal</h2>
+  <div class="container mt-4">
+    <h2 class="text-center mb-4">Clerical KPI Dashboard</h2>
+  
+    <div class="row text-center">
+      {% set kpis = [
+        ('Maintenance Events', maintenance_events, 'fa-wrench text-info'),
+        ('Maintenance Cost ($)', "%.2f"|format(maintenance_cost), 'fa-dollar-sign text-warning'),
+        ('Documents Uploaded', documents_uploaded, 'fa-file-upload text-primary')
+      ] %}
+  
+      {% for label, value, icon in kpis %}
+      <div class="col-md-4 mb-4">
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <i class="fa {{ icon }} fa-2x mb-2"></i>
+            <h5 class="card-title">{{ label }}</h5>
+            <h3 class="text-primary">{{ value }}</h3>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>  
   <div class="row">
 
     <!-- Maintenance Events -->

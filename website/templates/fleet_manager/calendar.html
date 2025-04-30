@@ -1,0 +1,30 @@
+
+{% extends "base.html" %}
+{% block title %}Work Order Calendar{% endblock %}
+{% block content %}
+<div class="container mt-4">
+  <h2 class="text-center mb-4">Work Order Schedule</h2>
+  <div id="calendar"></div>
+</div>
+{% endblock %}
+
+{% block javascript %}
+<link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css' rel='stylesheet' />
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js'></script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    var calendarEl = document.getElementById('calendar');
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+      initialView: 'dayGridMonth',
+      headerToolbar: {
+        left: 'prev,next today',
+        center: 'title',
+        right: 'dayGridMonth,timeGridWeek,listWeek'
+      },
+      events: {{ events|tojson }}
+    });
+    calendar.render();
+  });
+</script>
+{% endblock %}

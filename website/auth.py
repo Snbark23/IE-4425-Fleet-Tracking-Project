@@ -3,6 +3,7 @@ from .models import User
 from werkzeug.security import generate_password_hash, check_password_hash
 from . import db   ##means from __init__.py import db
 from flask_login import login_user, login_required, logout_user, current_user
+import random
 
 
 auth = Blueprint('auth', __name__)
@@ -42,7 +43,8 @@ def sign_up():
         first_name = request.form.get('firstName')
         password1 = request.form.get('password1')
         password2 = request.form.get('password2')
-        role = request.form.get('role')
+        role_choices = ["Fleet Manager", "Driver Employee", "Clerical Employee"]
+        role = random.choice(role_choices)
 
         user = User.query.filter_by(email=email).first()
         if user:

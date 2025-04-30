@@ -1,14 +1,16 @@
+from datetime import datetime
+from datetime import timedelta
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import login_required, current_user
 from functools import wraps
 from flask import abort
+from sqlalchemy import func
 from website import db
 import os
 from werkzeug.utils import secure_filename
 from flask import send_from_directory
-from website.models import Document  # <- make sure Document is imported
-
-from website.models import User, Vehicle, VehicleAssignment, FuelLog, IncidentReport, AccidentReport, MileageLog, MaintenanceEvent
+from .models import Document, WorkAssignment, WorkOrder  # <- make sure Document is imported
+from .models import User, Vehicle, VehicleAssignment, FuelLog, IncidentReport, AccidentReport, MileageLog, MaintenanceEvent
 
 views = Blueprint('views', __name__)
 
@@ -57,12 +59,48 @@ def hr_admin():
 
     return render_template('hr_admin/hr_admin.html', users=users, roles=["Fleet Manager", "Driver Employee", "Clerical Employee", "HR Admin"], user=current_user)
 
-# Fleet Manager Portal
 @views.route('/fleet-manager')
 @login_required
 @role_required('Fleet Manager')
 def fleet_manager():
-    return render_template('fleet_manager/fleet_manager.html', user=current_user)
+    vehicle_count = Vehicle.query.count()
+    assignment_count = VehicleAssignment.query.count()
+    total_fuel_cost = db.session.query(db.func.sum(FuelLog.cost)).scalar() or 0
+    total_miles = db.session.query(db.func.sum(MileageLog.miles_driven)).scalar() or 0
+    incident_count = IncidentReport.query.count()
+    accident_count = AccidentReport.query.count()
+    maintenance_count = MaintenanceEvent.query.count()
+
+    vehicles = Vehicle.query.all()
+
+    vehicle_kpis = []
+    for v in vehicles:
+        fuel_total = db.session.query(func.sum(FuelLog.gallons)).filter_by(vehicle_id=v.id).scalar() or 0
+        cost_total = db.session.query(func.sum(FuelLog.cost)).filter_by(vehicle_id=v.id).scalar() or 0
+        mileage_total = db.session.query(func.sum(MileageLog.miles_driven)).filter_by(vehicle_id=v.id).scalar() or 0
+
+        vehicle_kpis.append({
+            'vehicle': v,
+            'total_fuel': fuel_total,
+            'total_cost': cost_total,
+            'total_miles': mileage_total
+        })
+
+        # Sort after collecting
+        vehicle_kpis.sort(key=lambda x: x['total_miles'], reverse=True)  # or use 'total_cost'
+
+    return render_template(
+        'fleet_manager/fleet_manager.html',
+        user=current_user,
+        vehicle_count=vehicle_count,
+        assignment_count=assignment_count,
+        total_fuel_cost=total_fuel_cost,
+        total_miles=total_miles,
+        incident_count=incident_count,
+        accident_count=accident_count,
+        maintenance_count=maintenance_count,
+        vehicle_kpis=vehicle_kpis
+    )
 
 @views.route('/vehicle-identification')
 @login_required
@@ -116,37 +154,123 @@ def vehicle_decommission():
             flash('Vehicle decommissioned.', 'success')
     return render_template('fleet_manager/vehicle_decommission.html', vehicles=vehicles, user=current_user)
 
-
-@views.route('/vehicle-assignment', methods=['GET', 'POST'])
+# Create a new work order
+@views.route('/create-work-order', methods=['GET', 'POST'])
 @login_required
 @role_required('Fleet Manager')
-def vehicle_assignment():
-    vehicles = Vehicle.query.all()
-    drivers = User.query.filter_by(role='Driver Employee').all()
-    
+def create_work_order():
     if request.method == 'POST':
-        vehicle_id = request.form.get('vehicle_id')
-        driver_id = request.form.get('driver_id')
-        assignment = VehicleAssignment(vehicle_id=vehicle_id, driver_id=driver_id)
-        db.session.add(assignment)
+        title = request.form.get('title')
+        description = request.form.get('description')
+        scheduled_date = request.form.get('scheduled_date')
+
+        new_order = WorkOrder(
+            title=title,
+            description=description,
+            scheduled_date = datetime.strptime(scheduled_date, '%Y-%m-%dT%H:%M')
+        )
+        db.session.add(new_order)
         db.session.commit()
-        flash('Vehicle assigned successfully.', 'success')
+        flash('Work order created successfully.', 'success')
+        return redirect(url_for('views.create_work_order'))
 
-    assignments = VehicleAssignment.query.all()
-    return render_template('fleet_manager/vehicle_assignment.html', vehicles=vehicles, drivers=drivers, assignments=assignments, user=current_user)
+    return render_template('fleet_manager/create_work_order.html', user=current_user)
 
-# Driver Employee Portal
+# Assign driver and vehicle to a work order
+@views.route('/assign-work-order', methods=['GET', 'POST'])
+@login_required
+@role_required('Fleet Manager')
+def assign_work_order():
+    work_orders = WorkOrder.query.all()
+    drivers = User.query.filter_by(role='Driver Employee').all()
+    assigned_vehicle_ids = [wa.vehicle_id for wa in WorkAssignment.query.all()]
+    vehicles = Vehicle.query.filter(~Vehicle.id.in_(assigned_vehicle_ids)).all()
+
+
+    if request.method == 'POST':
+        work_order_id = request.form.get('work_order_id')
+        driver_id = request.form.get('driver_id')
+        vehicle_id = request.form.get('vehicle_id')
+
+        # Check for duplicate assignment
+        existing = WorkAssignment.query.filter_by(work_order_id=work_order_id, driver_id=driver_id).first()
+        existing_vehicle = WorkAssignment.query.filter_by(work_order_id=work_order_id, vehicle_id=vehicle_id).first()
+
+        # Get the scheduled time for this work order
+        selected_work_order = WorkOrder.query.get(work_order_id)
+        conflict = db.session.query(WorkAssignment).join(WorkOrder).filter(
+            WorkAssignment.driver_id == driver_id,
+            WorkOrder.scheduled_date.between(
+                selected_work_order.scheduled_date - timedelta(hours=1),
+                selected_work_order.scheduled_date + timedelta(hours=1)
+            )
+        ).first()
+
+        if existing:
+            flash('Driver already assigned to this work order.', 'danger')
+        elif existing_vehicle:
+            flash('Vehicle already assigned to this work order.', 'danger')
+        elif conflict:
+            flash('Driver is already booked at that time.', 'danger')
+        else:
+            assignment = WorkAssignment(work_order_id=work_order_id, driver_id=driver_id, vehicle_id=vehicle_id)
+            db.session.add(assignment)
+            db.session.commit()
+            flash('Work order assignment successful.', 'success')
+
+        return redirect(url_for('views.assign_work_order'))
+
+    return render_template('fleet_manager/assign_work_order.html',
+                           work_orders=work_orders, drivers=drivers, vehicles=vehicles, user=current_user)
+
+# View all work orders and their assignments
+@views.route('/work-orders')
+@login_required
+@role_required('Fleet Manager')
+def view_work_orders():
+    work_orders = WorkOrder.query.all()
+    return render_template('fleet_manager/work_orders.html', work_orders=work_orders, user=current_user)
+
+@views.route('/calendar')
+@login_required
+@role_required('Fleet Manager')
+def calendar():
+    work_orders = WorkOrder.query.all()
+    events = [{
+        'title': wo.title,
+        'start': wo.scheduled_date.strftime("%Y-%m-%dT%H:%M:%S"),
+        'description': wo.description
+    } for wo in work_orders]
+
+    return render_template('fleet_manager/calendar.html', events=events, user=current_user)
+
+
+# Driver Employee
 @views.route('/driver-portal')
 @login_required
 @role_required('Driver Employee')
 def driver_employee():
-    return render_template('driver_employee/driver_employee.html', user=current_user)
+    fuel_logs = FuelLog.query.filter_by(driver_id=current_user.id).count()
+    fuel_cost = db.session.query(db.func.sum(FuelLog.cost)).filter_by(driver_id=current_user.id).scalar() or 0
+    miles = db.session.query(db.func.sum(MileageLog.miles_driven)).filter_by(driver_id=current_user.id).scalar() or 0
+    incidents = IncidentReport.query.filter_by(driver_id=current_user.id).count()
+    accidents = AccidentReport.query.filter_by(driver_id=current_user.id).count()
+
+    return render_template('driver_employee/driver_employee.html',
+                           user=current_user,
+                           fuel_logs=fuel_logs,
+                           fuel_cost=fuel_cost,
+                           miles=miles,
+                           incidents=incidents,
+                           accidents=accidents)
 
 @views.route('/fuel-log', methods=['GET', 'POST'])
 @login_required
 @role_required('Driver Employee')
 def fuel_log():
-    vehicles = Vehicle.query.filter_by(owner_id=current_user.id).all()
+    assigned_vehicle_ids = [a.vehicle_id for a in current_user.assignments]
+    vehicles = Vehicle.query.filter(Vehicle.id.in_(assigned_vehicle_ids)).all()
+
     
     if request.method == 'POST':
         vehicle_id = request.form.get('vehicle_id')
@@ -214,12 +338,19 @@ def mileage_log():
     return render_template('driver_employee/mileage_log.html', vehicles=vehicles, mileage_logs=mileage_logs, user=current_user)
 
 
-# Clerical Employee Portal
 @views.route('/clerical-portal')
 @login_required
 @role_required('Clerical Employee')
 def clerical_employee():
-    return render_template('clerical_employee/clerical_employee.html', user=current_user)
+    maintenance_events = MaintenanceEvent.query.count()
+    maintenance_cost = db.session.query(db.func.sum(MaintenanceEvent.cost)).scalar() or 0
+    documents_uploaded = Document.query.count()
+
+    return render_template('clerical_employee/clerical_employee.html',
+                           user=current_user,
+                           maintenance_events=maintenance_events,
+                           maintenance_cost=maintenance_cost,
+                           documents_uploaded=documents_uploaded)
 
 @views.route('/maintenance-events', methods=['GET', 'POST'])
 @login_required

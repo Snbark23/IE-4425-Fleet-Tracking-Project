@@ -1,0 +1,40 @@
+
+{% extends "base.html" %}
+{% block title %}Work Orders{% endblock %}
+{% block content %}
+<div class="container mt-4">
+  <h2 class="text-center mb-4">All Work Orders</h2>
+  <div class="table-responsive">
+    <table class="table table-striped table-bordered text-center">
+      <thead class="thead-dark">
+        <tr>
+          <th>Title</th>
+          <th>Description</th>
+          <th>Scheduled Date</th>
+          <th>Assignments</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for wo in work_orders %}
+        <tr>
+          <td>{{ wo.title }}</td>
+          <td>{{ wo.description }}</td>
+          <td>{{ wo.scheduled_date.strftime('%Y-%m-%d %H:%M') }}</td>
+          <td>
+            {% if wo.assignments %}
+              <ul class="list-unstyled">
+                {% for a in wo.assignments %}
+                  <li>{{ a.driver.first_name }} {{ a.driver.last_name }} → {{ a.vehicle.make }} {{ a.vehicle.model }}</li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <em>No assignments</em>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,23 @@
+
+{% extends "base.html" %}
+{% block title %}Create Work Order{% endblock %}
+{% block content %}
+<div class="container mt-4">
+  <h2 class="text-center">Create Work Order</h2>
+  <form method="POST" class="mt-4">
+    <div class="form-group">
+      <label>Title</label>
+      <input name="title" class="form-control" required>
+    </div>
+    <div class="form-group">
+      <label>Description</label>
+      <textarea name="description" class="form-control" rows="4"></textarea>
+    </div>
+    <div class="form-group">
+      <label>Scheduled Date</label>
+      <input name="scheduled_date" type="datetime-local" class="form-control" required>
+    </div>
+    <button type="submit" class="btn btn-success">Create Work Order</button>
+  </form>
+</div>
+{% endblock %}
