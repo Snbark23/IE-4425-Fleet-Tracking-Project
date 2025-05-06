@@ -1,66 +1,42 @@
+
 {% extends "base.html" %}
 {% block title %}Clerical Employee Portal{% endblock %}
 {% block content %}
-<div class="container mt-4">
-  <h2 class="text-center">Clerical Employee Portal</h2>
-  <div class="container mt-4">
-    <h2 class="text-center mb-4">Clerical KPI Dashboard</h2>
-  
+<h2 class="text-center text-primary mb-4">Clerical Employee Portal</h2>
+
+<!-- KPI Dashboard -->
+<div class="card bg-light shadow mb-4">
+  <div class="card-header bg-primary text-white"><strong>Clerical Dashboard</strong></div>
+  <div class="card-body">
     <div class="row text-center">
       {% set kpis = [
-        ('Maintenance Events', maintenance_events, 'fa-wrench text-info'),
-        ('Maintenance Cost ($)', "%.2f"|format(maintenance_cost), 'fa-dollar-sign text-warning'),
-        ('Documents Uploaded', documents_uploaded, 'fa-file-upload text-primary')
+        ('Maintenance Events', maintenance_events, 'fas fa-tools', 'Logged maintenance actions'),
+        ('Maintenance Cost ($)', "%.2f"|format(maintenance_cost), 'fas fa-dollar-sign', 'Total maintenance expenses'),
+        ('Documents Uploaded', documents_uploaded, 'fas fa-file-upload', 'Reports or work order files')
       ] %}
-  
-      {% for label, value, icon in kpis %}
-      <div class="col-md-4 mb-4">
-        <div class="card shadow-sm">
-          <div class="card-body">
-            <i class="fa {{ icon }} fa-2x mb-2"></i>
-            <h5 class="card-title">{{ label }}</h5>
-            <h3 class="text-primary">{{ value }}</h3>
-          </div>
+      {% for label, value, icon, tooltip in kpis %}
+      <div class="col-md-4 col-sm-6 mb-3">
+        <div class="card bg-white border shadow-sm p-2 h-100">
+          <i class="{{ icon }} fa-2x text-primary" data-toggle="tooltip" title="{{ tooltip }}"></i>
+          <h6 class="mt-2 font-weight-bold">{{ label }}</h6>
+          <h4 class="text-dark">{{ value }}</h4>
         </div>
       </div>
       {% endfor %}
     </div>
-  </div>  
-  <div class="row">
+  </div>
+</div>
 
-    <!-- Maintenance Events -->
-    <div class="col-md-4">
-      <div class="card mb-4">
-        <div class="card-header bg-info text-white">Maintenance Events</div>
-        <div class="card-body">
-          <p>Log and review vehicle maintenance history.</p>
-          <a href="{{ url_for('views.maintenance_events') }}" class="btn btn-info">Go</a>
-        </div>
-      </div>
+<!-- Action Buttons -->
+<div class="card shadow mb-4">
+  <div class="card-header bg-dark text-white"><strong>Quick Actions</strong></div>
+  <div class="card-body">
+    <div class="row text-center">
+      <div class="col-md-4 mb-2"><a href="/my-assignments" class="btn btn-outline-info w-100"><i class="fas fa-clipboard-list mr-1"></i> My Assignments</a></div>      
+      <div class="col-md-4 mb-2"><a href="/maintenance-events" class="btn btn-info w-100"><i class="fas fa-tools mr-1"></i> Add Maintenance</a></div>
+      <div class="col-md-4 mb-2"><a href="/upload-document" class="btn btn-secondary w-100"><i class="fas fa-file-upload mr-1"></i> Upload Document</a></div>
+      <div class="col-md-4 mb-2"><a href="/view-maintenance" class="btn btn-primary w-100"><i class="fas fa-book-open mr-1"></i> View Maintenance Logs</a></div>
     </div>
-
-    <!-- Document Upload -->
-    <div class="col-md-4">
-      <div class="card mb-4">
-        <div class="card-header bg-warning text-dark">Document Upload</div>
-        <div class="card-body">
-          <p>Upload and view important documents.</p>
-          <a href="{{ url_for('views.upload_document') }}" class="btn btn-warning">Go</a>
-        </div>
-      </div>
-    </div>
-
-    <!-- Placeholder for Future Features -->
-    <div class="col-md-4">
-      <div class="card mb-4">
-        <div class="card-header bg-secondary text-white">Coming Soon</div>
-        <div class="card-body">
-          <p>Additional features for clerical employees.</p>
-          <a href="#" class="btn btn-secondary disabled">Go</a>
-        </div>
-      </div>
-    </div>
-
   </div>
 </div>
 {% endblock %}

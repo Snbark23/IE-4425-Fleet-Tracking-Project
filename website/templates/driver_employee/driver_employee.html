@@ -1,79 +1,45 @@
+
 {% extends "base.html" %}
 {% block title %}Driver Employee Portal{% endblock %}
 {% block content %}
-<h2 class="text-center">Driver Employee Portal</h2>
-<div class="container mt-4">
-  <h2 class="text-center mb-4">Driver KPI Dashboard</h2>
+<h2 class="text-center text-success mb-4">Driver Employee Portal</h2>
 
-  <div class="row text-center">
-    {% set kpis = [
-      ('Fuel Logs', fuel_logs, 'fa-gas-pump text-success'),
-      ('Fuel Cost ($)', "%.2f"|format(fuel_cost), 'fa-dollar-sign text-warning'),
-      ('Miles Driven', "%.1f"|format(miles), 'fa-road text-info'),
-      ('Incident Reports', incidents, 'fa-exclamation-circle text-danger'),
-      ('Accident Reports', accidents, 'fa-car-crash text-secondary')
-    ] %}
-
-    {% for label, value, icon in kpis %}
-    <div class="col-md-4 mb-4">
-      <div class="card shadow-sm">
-        <div class="card-body">
-          <i class="fa {{ icon }} fa-2x mb-2"></i>
-          <h5 class="card-title">{{ label }}</h5>
-          <h3 class="text-primary">{{ value }}</h3>
+<!-- Dashboard Cards -->
+<div class="card bg-light shadow mb-4">
+  <div class="card-header bg-success text-white"><strong>Driver Dashboard</strong></div>
+  <div class="card-body">
+    <div class="row text-center">
+      {% set kpis = [
+        ('Fuel Logs', fuel_logs, 'fas fa-gas-pump', 'Total fuel logs submitted'),
+        ('Fuel Cost ($)', "%.2f"|format(fuel_cost), 'fas fa-dollar-sign', 'Total spent on fuel'),
+        ('Miles Driven', "%.1f"|format(miles), 'fas fa-road', 'Total miles logged'),
+        ('Incidents', incidents, 'fas fa-tools', 'Minor issues (e.g. popped tire)'),
+        ('Accidents', accidents, 'fas fa-car-crash', 'Involving another party')
+      ] %}
+      {% for label, value, icon, tooltip in kpis %}
+      <div class="col-md-4 col-sm-6 mb-3">
+        <div class="card bg-white border shadow-sm p-2 h-100">
+          <i class="{{ icon }} fa-2x text-success" data-toggle="tooltip" title="{{ tooltip }}"></i>
+          <h6 class="mt-2 font-weight-bold">{{ label }}</h6>
+          <h4 class="text-dark">{{ value }}</h4>
         </div>
       </div>
+      {% endfor %}
     </div>
-    {% endfor %}
   </div>
 </div>
-<div class="container mt-4">
-  <div class="row">
 
-    <!-- Fuel Log -->
-    <div class="col-md-3">
-      <div class="card">
-        <div class="card-header bg-warning text-dark">Fuel Log</div>
-        <div class="card-body">
-          <p>Log vehicle fueling activities.</p>
-          <a href="{{ url_for('views.fuel_log') }}" class="btn btn-warning btn-sm">Go</a>
-        </div>
-      </div>
+<!-- Action Buttons -->
+<div class="card shadow mb-4">
+  <div class="card-header bg-dark text-white"><strong>Quick Actions</strong></div>
+  <div class="card-body">
+    <div class="row text-center">
+      <div class="col-md-3 mb-2"><a href="/my-assignments" class="btn btn-outline-info w-100"><i class="fas fa-clipboard-list mr-1"></i> My Assignments</a></div>      
+      <div class="col-md-3 mb-2"><a href="/fuel-log" class="btn btn-success w-100"><i class="fas fa-gas-pump mr-1"></i> Submit Fuel Log</a></div>
+      <div class="col-md-3 mb-2"><a href="/mileage-log" class="btn btn-primary w-100"><i class="fas fa-ruler mr-1"></i> Submit Mileage</a></div>
+      <div class="col-md-3 mb-2"><a href="/incident-report" class="btn btn-warning w-100"><i class="fas fa-tools mr-1"></i> Report Incident</a></div>
+      <div class="col-md-3 mb-2"><a href="/accident-report" class="btn btn-danger w-100"><i class="fas fa-car-crash mr-1"></i> Report Accident</a></div>
     </div>
-
-    <!-- Incident Report -->
-    <div class="col-md-3">
-      <div class="card">
-        <div class="card-header bg-secondary text-white">Incident Report</div>
-        <div class="card-body">
-          <p>Report vehicle incidents.</p>
-          <a href="{{ url_for('views.incident_report') }}" class="btn btn-secondary btn-sm">Go</a>
-        </div>
-      </div>
-    </div>
-
-    <!-- Accident Report -->
-    <div class="col-md-3">
-      <div class="card">
-        <div class="card-header bg-danger text-white">Accident Report</div>
-        <div class="card-body">
-          <p>Report accidents involving vehicles.</p>
-          <a href="{{ url_for('views.accident_report') }}" class="btn btn-danger btn-sm">Go</a>
-        </div>
-      </div>
-    </div>
-
-    <!-- Mileage Log -->
-    <div class="col-md-3">
-      <div class="card">
-        <div class="card-header bg-success text-white">Mileage Log</div>
-        <div class="card-body">
-          <p>Log vehicle mileage.</p>
-          <a href="{{ url_for('views.mileage_log') }}" class="btn btn-success btn-sm">Go</a>
-        </div>
-      </div>
-    </div>
-
   </div>
 </div>
 {% endblock %}

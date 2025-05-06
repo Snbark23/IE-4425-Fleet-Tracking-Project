@@ -1,52 +1,28 @@
+
 {% extends "base.html" %}
-{% block title %}Vehicle Info{% endblock %}
+{% block title %}Home{% endblock %}
+
 {% block content %}
+<div class="text-center mt-5">
+  <h2 class="mb-3 text-primary">Welcome, {{ user.first_name }}!</h2>
+  <p class="lead">Select your portal to continue:</p>
 
-<h1 align="center">Vehicle Information</h1>
-
-<ul class="list-group list-group-flush" id="vehicles">
-    {% for vehicle in user.vehicles %}
-    <li class="list-group-item">
-        <strong>VIN:</strong> {{ vehicle.vin }} <br>
-        <strong>Make:</strong> {{ vehicle.make or 'N/A' }} <br>
-        <strong>Model:</strong> {{ vehicle.model or 'N/A' }} <br>
-        <strong>Year:</strong> {{ vehicle.year or 'N/A' }} <br>
-        <strong>Engine Type:</strong> {{ vehicle.engine_type or 'N/A' }} <br>
-        <strong>Displacement:</strong> {{ vehicle.displacement or 'N/A' }} <br>
-        <strong>Cylinders:</strong> {{ vehicle.cylinders or 'N/A' }} <br>
-        <strong>Fuel Type:</strong> {{ vehicle.fuel_type or 'N/A' }}
-        <button type="button" class="close" onclick="deleteVehicle('{{ vehicle.id }}')">
-            <span aria-hidden="true">&times;</span>
-        </button>
-    </li>
-    {% endfor %}
-</ul>
-
-<form method="POST">
-    <input type="text" name="vin" id="vin" class="form-control" placeholder="Enter VIN (17 characters)" required>
-    <br />
-    <input type="text" name="make" id="make" class="form-control" placeholder="Vehicle Make (optional)">
-    <br />
-    <input type="text" name="model" id="model" class="form-control" placeholder="Vehicle Model (optional)">
-    <br />
-    <input type="number" name="year" id="year" class="form-control" placeholder="Year (optional)">
-    <br />
-    <select name="engine_type" id="engine_type" class="form-control" required>
-        <option value="">Select Engine Type</option>
-        <option value="Internal Combustion">Internal Combustion</option>
-        <option value="Hybrid Electric (HEV)">Hybrd Electric (HEV)</option>
-        <option value="EV">EV</option>
-    </select>
-    <br />
-    <input type="text" name="displacement" id="displacement" class="form-control" placeholder="Engine Displacement (e.g., 2.0L)" required>
-    <br />
-    <input type="number" name="cylinders" id="cylinders" class="form-control" placeholder="Number of Cylinders" required>
-    <br />
-    <input type="text" name="fuel_type" id="fuel_type" class="form-control" placeholder="Fuel Type (e.g., Gasoline, Diesel, Electric)" required>
-    <br />
-    <div align="center">
-        <button type="submit" class="btn btn-primary">Add Vehicle</button>
-    </div>
-</form>
-
+  {% if user.role == 'Fleet Manager' %}
+    <a href="{{ url_for('views.fleet_manager') }}" class="btn btn-outline-primary btn-lg mt-3">
+      <i class="fas fa-clipboard-list mr-2"></i> Fleet Manager Portal
+    </a>
+  {% elif user.role == 'Driver Employee' %}
+    <a href="{{ url_for('views.driver_employee') }}" class="btn btn-outline-success btn-lg mt-3">
+      <i class="fas fa-truck-moving mr-2"></i> Driver Employee Portal
+    </a>
+  {% elif user.role == 'Clerical Employee' %}
+    <a href="{{ url_for('views.clerical_employee') }}" class="btn btn-outline-info btn-lg mt-3">
+      <i class="fas fa-folder-open mr-2"></i> Clerical Employee Portal
+    </a>
+  {% elif user.role == 'HR Admin' %}
+    <a href="{{ url_for('views.hr_admin') }}" class="btn btn-outline-secondary btn-lg mt-3">
+      <i class="fas fa-user-cog mr-2"></i> HR Admin Portal
+    </a>
+  {% endif %}
+</div>
 {% endblock %}

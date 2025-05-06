@@ -2,30 +2,61 @@
 {% block title %}Mileage Log{% endblock %}
 {% block content %}
 <div class="container mt-4">
-  <h2>Mileage Log</h2>
+  <h2 class="text-center">Mileage Log</h2>
+  
+  <div class="alert alert-secondary mt-3">
+    <h5>Instructions</h5>
+    <p>Driver Employees can log their mileage for vehicles they operate.</p>
+    <ul>
+      <li>Select your assigned vehicle.</li>
+      <li>Enter the total miles driven.</li>
+      <li>Submit the log entry to save the data.</li>
+    </ul>
+    <p class="mb-0"><em>Each entry is timestamped and shown in the table below.</em></p>
+  </div>
+
+  <!-- Log Form -->
   <form method="POST" class="mb-4">
     <div class="form-group">
-      <label>Vehicle</label>
+      <label for="vehicle_id">Vehicle</label>
       <select name="vehicle_id" class="form-control" required>
         {% for vehicle in vehicles %}
-          <option value="{{ vehicle.id }}">{{ vehicle.make }} {{ vehicle.model }}</option>
+        <option value="{{ vehicle.id }}">{{ vehicle.make }} {{ vehicle.model }}</option>
         {% endfor %}
       </select>
     </div>
     <div class="form-group">
-      <label>Miles Driven</label>
+      <label for="miles_driven">Miles Driven</label>
       <input type="number" step="0.1" name="miles_driven" class="form-control" required>
     </div>
-    <button type="submit" class="btn btn-success mt-2">Log Miles</button>
+    <button type="submit" class="btn btn-primary">Submit Mileage</button>
   </form>
 
-  <h4>Log History</h4>
-  <ul class="list-group">
-    {% for log in mileage_logs %}
-      <li class="list-group-item">
-        {{ log.date }} — {{ log.miles_driven }} miles
-      </li>
-    {% endfor %}
-  </ul>
+  <!-- Display Existing Logs -->
+  <h4 class="mt-5">Logged Mileage Entries</h4>
+  <table class="table table-striped mt-2">
+    <thead>
+      <tr>
+        <th>Vehicle</th>
+        <th>Miles Driven</th>
+        <th>Date</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for entry in mileage_logs %}
+      <tr>
+        <td>
+          {% for vehicle in vehicles %}
+            {% if vehicle.id == entry.vehicle_id %}
+              {{ vehicle.make }} {{ vehicle.model }}
+            {% endif %}
+          {% endfor %}
+        </td>
+        <td>{{ entry.miles_driven }}</td>
+        <td>{{ entry.date.strftime('%Y-%m-%d') }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 </div>
 {% endblock %}
