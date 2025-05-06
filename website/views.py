@@ -9,8 +9,9 @@ from website import db
 import os
 from werkzeug.utils import secure_filename
 from flask import send_from_directory
-from .models import Document, WorkAssignment, WorkOrder  # <- make sure Document is imported
-from .models import User, Vehicle, VehicleAssignment, FuelLog, IncidentReport, AccidentReport, MileageLog, MaintenanceEvent
+from .models import Document, WorkAssignment, WorkOrder
+from .models import User, Vehicle, VehicleAssignment, FuelLog, IncidentReport, AccidentReport, MileageLog, MaintenanceEvent, WorkAssignment
+
 
 views = Blueprint('views', __name__)
 
@@ -65,42 +66,48 @@ def hr_admin():
 def fleet_manager():
     vehicle_count = Vehicle.query.count()
     assignment_count = VehicleAssignment.query.count()
-    total_fuel_cost = db.session.query(db.func.sum(FuelLog.cost)).scalar() or 0
-    total_miles = db.session.query(db.func.sum(MileageLog.miles_driven)).scalar() or 0
+
+    # Total fuel cost and mileage
+    total_fuel_cost = db.session.query(func.coalesce(func.sum(FuelLog.cost), 0)).scalar()
+    total_miles = db.session.query(func.coalesce(func.sum(MileageLog.miles_driven), 0)).scalar()
+
+    # Incidents, accidents, and maintenance
     incident_count = IncidentReport.query.count()
     accident_count = AccidentReport.query.count()
     maintenance_count = MaintenanceEvent.query.count()
 
-    vehicles = Vehicle.query.all()
+    # KPIs per vehicle
+    vehicle_kpis = db.session.query(
+        Vehicle,
+        func.coalesce(func.sum(FuelLog.gallons), 0).label('total_fuel'),
+        func.coalesce(func.sum(FuelLog.cost), 0).label('total_cost'),
+        func.coalesce(func.sum(MileageLog.miles_driven), 0).label('total_miles')
+    ).outerjoin(FuelLog, FuelLog.vehicle_id == Vehicle.id) \
+     .outerjoin(MileageLog, MileageLog.vehicle_id == Vehicle.id) \
+     .group_by(Vehicle.id).all()
 
-    vehicle_kpis = []
-    for v in vehicles:
-        fuel_total = db.session.query(func.sum(FuelLog.gallons)).filter_by(vehicle_id=v.id).scalar() or 0
-        cost_total = db.session.query(func.sum(FuelLog.cost)).filter_by(vehicle_id=v.id).scalar() or 0
-        mileage_total = db.session.query(func.sum(MileageLog.miles_driven)).filter_by(vehicle_id=v.id).scalar() or 0
-
-        vehicle_kpis.append({
+    # Convert to objects
+    vehicle_kpis_formatted = [
+        {
             'vehicle': v,
-            'total_fuel': fuel_total,
-            'total_cost': cost_total,
-            'total_miles': mileage_total
-        })
+            'total_fuel': total_fuel,
+            'total_cost': total_cost,
+            'total_miles': total_miles
+        }
+        for v, total_fuel, total_cost, total_miles in vehicle_kpis
+    ]
 
-        # Sort after collecting
-        vehicle_kpis.sort(key=lambda x: x['total_miles'], reverse=True)  # or use 'total_cost'
+    return render_template("fleet_manager/fleet_manager.html",
+                       vehicle_count=vehicle_count,
+                       assignment_count=assignment_count,
+                       total_fuel_cost=total_fuel_cost,
+                       total_miles=total_miles,
+                       incident_count=incident_count,
+                       accident_count=accident_count,
+                       maintenance_count=maintenance_count,
+                       vehicle_kpis=vehicle_kpis_formatted,
+                       user=current_user)
 
-    return render_template(
-        'fleet_manager/fleet_manager.html',
-        user=current_user,
-        vehicle_count=vehicle_count,
-        assignment_count=assignment_count,
-        total_fuel_cost=total_fuel_cost,
-        total_miles=total_miles,
-        incident_count=incident_count,
-        accident_count=accident_count,
-        maintenance_count=maintenance_count,
-        vehicle_kpis=vehicle_kpis
-    )
 
 @views.route('/vehicle-identification')
 @login_required
@@ -245,6 +252,14 @@ def calendar():
     return render_template('fleet_manager/calendar.html', events=events, user=current_user)
 
 
+# Fleet Manager Status View
+@views.route('/fleet-status-overview')
+@login_required
+@role_required('Fleet Manager')
+def fleet_status_overview():
+    assignments = WorkAssignment.query.all()
+    return render_template('fleet_manager/fleet_status_overview.html', assignments=assignments, user=current_user)
+
 # Driver Employee
 @views.route('/driver-portal')
 @login_required
@@ -263,6 +278,38 @@ def driver_employee():
                            miles=miles,
                            incidents=incidents,
                            accidents=accidents)
+
+# Driver Portal
+@views.route('/my-assignments')
+@login_required
+@role_required('Driver Employee')
+def driver_assignments():
+    active_assignments = WorkAssignment.query.filter(
+    WorkAssignment.driver_id == current_user.id,
+    WorkAssignment.status.in_(['Assigned', 'In Progress'])
+    ).all()
+    completed_assignments = WorkAssignment.query.filter_by(
+        driver_id=current_user.id, status='Completed'
+    ).all()
+    return render_template('driver_employee/my_assignments.html',
+                            active_assignments=active_assignments, 
+                            completed_assignments=completed_assignments, 
+                            user=current_user)
+
+@views.route('/update-assignment-status/<int:assignment_id>/<new_status>', methods=['POST'])
+@login_required
+def update_assignment_status(assignment_id, new_status):
+    assignment = WorkAssignment.query.get_or_404(assignment_id)
+
+    if assignment.driver_id != current_user.id:
+        flash("Unauthorized", "danger")
+        return redirect(url_for('views.home'))
+
+    assignment.status = new_status
+    db.session.commit()
+
+    flash(f"Status updated to {new_status}", "success")
+    return redirect(request.referrer or url_for('views.home'))
 
 @views.route('/fuel-log', methods=['GET', 'POST'])
 @login_required
@@ -352,6 +399,25 @@ def clerical_employee():
                            maintenance_cost=maintenance_cost,
                            documents_uploaded=documents_uploaded)
 
+# Clerical Employee Route
+@views.route('/my-assignments')
+@login_required
+@role_required('Clerical Employee')
+def clerical_assignments():
+    active_assignments = WorkAssignment.query.filter(
+        WorkAssignment.driver_id == current_user.id,
+        WorkAssignment.status.in_(['Assigned', 'In Progress'])
+    ).all()
+    completed_assignments = WorkAssignment.query.filter_by(
+        driver_id=current_user.id, status='Completed'
+    ).all()
+    return render_template(
+        'clerical_employee/my_assignments.html',
+        active_assignments=active_assignments,
+        completed_assignments=completed_assignments,
+        user=current_user
+    )
+
 @views.route('/maintenance-events', methods=['GET', 'POST'])
 @login_required
 @role_required('Clerical Employee')
@@ -436,6 +502,24 @@ def profile():
         flash('Profile updated successfully.', 'success')
 
     return render_template('profile.html', user=current_user)
+
+@views.route('/complete-work-order/<int:assignment_id>', methods=['POST'])
+@login_required
+def complete_work_order(assignment_id):
+    assignment = WorkAssignment.query.get_or_404(assignment_id)
+
+    # Only allow the assigned driver or clerical employee to close
+    if assignment.driver_id != current_user.id:
+        flash("You are not authorized to close this assignment.", "danger")
+        return redirect(url_for('views.home'))
+
+    assignment.status = 'Completed'
+    assignment.closed_by = current_user.id
+    assignment.closed_at = datetime.utcnow()
+    db.session.commit()
+
+    flash("Work order marked as complete.", "success")
+    return redirect(url_for('views.home'))
 
 
 @views.app_errorhandler(403)
