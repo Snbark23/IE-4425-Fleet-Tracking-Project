@@ -11,30 +11,20 @@
           <h4 class="mb-0">Log Fuel Entry</h4>
         </div>
         <div class="card-body">
-          <form method="POST">
-            <div class="mb-3">
-              <label for="vehicle_id" class="form-label">Select Vehicle</label>
-              <select name="vehicle_id" id="vehicle_id" class="form-select" required>
-                {% for vehicle in vehicles %}
-                  <option value="{{ vehicle.id }}">{{ vehicle.make }} {{ vehicle.model }} ({{ vehicle.vin }})</option>
-                {% endfor %}
-              </select>
-            </div>
-
-            <div class="mb-3">
-              <label for="gallons" class="form-label">Gallons Filled</label>
-              <input type="number" name="gallons" id="gallons" class="form-control" step="0.01" required>
-            </div>
-
-            <div class="mb-3">
-              <label for="cost" class="form-label">Total Cost ($)</label>
-              <input type="number" name="cost" id="cost" class="form-control" step="0.01" required>
-            </div>
-
-            <div class="text-center">
-              <button type="submit" class="btn btn-primary">Add Entry</button>
-            </div>
-          </form>
+          <div class="mb-3">
+            <label for="start_mileage" class="form-label">Start Mileage</label>
+            <input type="number" name="start_mileage" id="start_mileage" class="form-control" step="0.1" readonly>
+          </div>
+          
+          <div class="mb-3">
+            <label for="end_mileage" class="form-label">End Mileage</label>
+            <input type="number" name="end_mileage" id="end_mileage" class="form-control" step="0.1" required>
+          </div>
+          
+          <div class="mb-3">
+            <label for="miles_driven" class="form-label">Miles Driven</label>
+            <input type="number" name="miles_driven" id="miles_driven" class="form-control" step="0.1" readonly>
+          </div>          
         </div>
       </div>
 

@@ -30,15 +30,25 @@ with app.app_context():
         if not User.query.filter_by(email=user.email).first():
             db.session.add(user)
 
+    db.session.commit()
+
+    # Get driver_id for Riley
+    driver = User.query.filter_by(email="driver@fleet.com").first()
+
     # === Add 50 vehicles ===
     makes = ['Ford', 'Toyota', 'Chevy', 'Nissan', 'Honda']
     models = ['F-150', 'Camry', 'Silverado', 'Altima', 'Civic']
 
+    vehicles = []
     for _ in range(50):
         make = random.choice(makes)
         model = random.choice(models)
         vin = fake.unique.bothify(text='???#####??###???')
-        db.session.add(Vehicle(make=make, model=model, vin=vin))
+        v = Vehicle(make=make, model=model, vin=vin, owner_id=driver.id)
+        db.session.add(v)
+        vehicles.append(v)
+
+    db.session.commit()
 
     # === Add 50 work orders ===
     for i in range(50):
@@ -47,20 +57,33 @@ with app.app_context():
         scheduled = fake.date_time_this_year()
         db.session.add(WorkOrder(title=title, description=description, scheduled_date=scheduled, created_at=scheduled))
 
-    # === Add 50 fuel logs ===
+    # === Add 50 fuel logs with mileage ===
     for _ in range(50):
-        vehicle_id = random.randint(1, 50)
+        vehicle = random.choice(vehicles)
         gallons = round(random.uniform(5, 25), 2)
         cost = round(gallons * random.uniform(2.5, 4.0), 2)
+        start_mileage = round(random.uniform(5000, 9000), 1)
+        end_mileage = start_mileage + round(random.uniform(10, 300), 1)
+        miles_driven = end_mileage - start_mileage
         date = fake.date_time_this_year()
-        db.session.add(FuelLog(vehicle_id=vehicle_id, gallons=gallons, cost=cost, date=date))
+
+        db.session.add(FuelLog(
+            vehicle_id=vehicle.id,
+            driver_id=driver.id,
+            gallons=gallons,
+            cost=cost,
+            start_mileage=start_mileage,
+            end_mileage=end_mileage,
+            miles_driven=miles_driven,
+            date=date
+        ))
 
     # === Add 50 mileage logs ===
     for _ in range(50):
-        vehicle_id = random.randint(1, 50)
+        vehicle = random.choice(vehicles)
         miles = round(random.uniform(10, 300), 1)
         date = fake.date_time_this_year()
-        db.session.add(MileageLog(vehicle_id=vehicle_id, miles_driven=miles, date=date))
+        db.session.add(MileageLog(vehicle_id=vehicle.id, miles_driven=miles, date=date, driver_id=driver.id))
 
     db.session.commit()
-    print("Added 4 use-case users + 50 vehicles, work orders, fuel logs, and mileage logs.")
+    print("Added 4 use-case users + 50 vehicles, work orders, fuel logs (with mileage), and mileage logs.")

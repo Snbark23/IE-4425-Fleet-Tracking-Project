@@ -250,15 +250,44 @@ def fleet_status_overview():
 @login_required
 @role_required('Fleet Manager')
 def vehicle_decommission():
-    vehicles = Vehicle.query.all()
+    vehicles = Vehicle.query.all()  # ← Make sure this is always declared
+
     if request.method == 'POST':
         vehicle_id = request.form.get('vehicle_id')
+        sale_price = request.form.get('sale_price')
+        salvage_value = request.form.get('salvage_value')
+        money_received = request.form.get('money_received')
+        reason = request.form.get('reason')
+
         vehicle = Vehicle.query.get(vehicle_id)
         if vehicle:
+            record = DecommissionedVehicle(
+                vin=vehicle.vin,
+                make=vehicle.make,
+                model=vehicle.model,
+                year=vehicle.year,
+                engine_type=vehicle.engine_type,
+                displacement=vehicle.displacement,
+                cylinders=vehicle.cylinders,
+                fuel_type=vehicle.fuel_type,
+                sale_price=sale_price,
+                salvage_value=salvage_value,
+                money_received=money_received,
+                reason=reason
+            )
+            db.session.add(record)
             db.session.delete(vehicle)
             db.session.commit()
             flash('Vehicle decommissioned.', 'success')
-    return render_template('fleet_manager/vehicle_decommission.html', vehicles=vehicles, user=current_user)
+            return redirect(url_for('views.vehicle_decommission'))  # Make sure you redirect after POST
+
+    # Include this even after POST so the GET works:
+    history = DecommissionedVehicle.query.order_by(DecommissionedVehicle.decommission_date.desc()).all()
+
+    return render_template('fleet_manager/vehicle_decommission.html',
+                           vehicles=vehicles,
+                           history=history,
+                           user=current_user)
 
 # Driver Employee
 @views.route('/driver-portal')

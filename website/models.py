@@ -73,6 +73,11 @@ class FuelLog(db.Model):
     cost = db.Column(db.Float)
     date = db.Column(db.Date, default=func.now())
 
+    start_mileage = db.Column(db.Float)
+    end_mileage = db.Column(db.Float)
+    miles_driven = db.Column(db.Float)
+
+
 class IncidentReport(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     vehicle_id = db.Column(db.Integer, db.ForeignKey('vehicle.id'))
@@ -111,9 +116,6 @@ class Document(db.Model):
     upload_date = db.Column(db.DateTime(timezone=True), server_default=func.now())
 
 class DecommissionedVehicle(db.Model):
-    __tablename__ = 'decommissioned_vehicle'
-    __table_args__ = {'extend_existing': True}
-
     id = db.Column(db.Integer, primary_key=True)
     vin = db.Column(db.String(17))
     make = db.Column(db.String(50))
@@ -126,4 +128,5 @@ class DecommissionedVehicle(db.Model):
     sale_price = db.Column(db.Float)
     salvage_value = db.Column(db.Float)
     money_received = db.Column(db.Float)
+    reason = db.Column(db.Text)  # ← Add this line
     decommission_date = db.Column(db.DateTime, server_default=func.now())
