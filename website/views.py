@@ -179,42 +179,62 @@ def assign_work_order():
     assigned_vehicle_ids = [wa.vehicle_id for wa in WorkAssignment.query.all()]
     vehicles = Vehicle.query.filter(~Vehicle.id.in_(assigned_vehicle_ids)).all()
 
-
     if request.method == 'POST':
-        work_order_id = request.form.get('work_order_id')
-        driver_id = request.form.get('driver_id')
-        vehicle_id = request.form.get('vehicle_id')
+        try:
+            work_order_id = request.form.get('work_order_id')
+            driver_id = request.form.get('driver_id')
+            vehicle_id = request.form.get('vehicle_id')
 
-        # Check for duplicate assignment
-        existing = WorkAssignment.query.filter_by(work_order_id=work_order_id, driver_id=driver_id).first()
-        existing_vehicle = WorkAssignment.query.filter_by(work_order_id=work_order_id, vehicle_id=vehicle_id).first()
+            if not all([work_order_id, driver_id, vehicle_id]):
+                flash('All fields must be selected.', 'danger')
+                return redirect(url_for('views.assign_work_order'))
 
-        # Get the scheduled time for this work order
-        selected_work_order = WorkOrder.query.get(work_order_id)
-        conflict = db.session.query(WorkAssignment).join(WorkOrder).filter(
-            WorkAssignment.driver_id == driver_id,
-            WorkOrder.scheduled_date.between(
-                selected_work_order.scheduled_date - timedelta(hours=1),
-                selected_work_order.scheduled_date + timedelta(hours=1)
-            )
-        ).first()
+            # Parse and validate objects
+            selected_work_order = WorkOrder.query.get(work_order_id)
+            if not selected_work_order:
+                flash('Work order not found.', 'danger')
+                return redirect(url_for('views.assign_work_order'))
 
-        if existing:
-            flash('Driver already assigned to this work order.', 'danger')
-        elif existing_vehicle:
-            flash('Vehicle already assigned to this work order.', 'danger')
-        elif conflict:
-            flash('Driver is already booked at that time.', 'danger')
-        else:
-            assignment = WorkAssignment(work_order_id=work_order_id, driver_id=driver_id, vehicle_id=vehicle_id)
-            db.session.add(assignment)
-            db.session.commit()
-            flash('Work order assignment successful.', 'success')
+            existing = WorkAssignment.query.filter_by(
+                work_order_id=work_order_id, driver_id=driver_id).first()
+            existing_vehicle = WorkAssignment.query.filter_by(
+                work_order_id=work_order_id, vehicle_id=vehicle_id).first()
+
+            conflict = db.session.query(WorkAssignment).join(WorkOrder).filter(
+                WorkAssignment.driver_id == driver_id,
+                WorkOrder.scheduled_date.between(
+                    selected_work_order.scheduled_date - timedelta(hours=1),
+                    selected_work_order.scheduled_date + timedelta(hours=1)
+                )
+            ).first()
+
+            if existing:
+                flash('Driver already assigned to this work order.', 'danger')
+            elif existing_vehicle:
+                flash('Vehicle already assigned to this work order.', 'danger')
+            elif conflict:
+                flash('Driver is already booked at that time.', 'danger')
+            else:
+                assignment = WorkAssignment(
+                    work_order_id=work_order_id,
+                    driver_id=driver_id,
+                    vehicle_id=vehicle_id
+                )
+                db.session.add(assignment)
+                db.session.commit()
+                flash('Work order assignment successful.', 'success')
+
+        except Exception as e:
+            print("ERROR during assignment:", e)  # Logs to console
+            flash('An unexpected error occurred while assigning the work order.', 'danger')
 
         return redirect(url_for('views.assign_work_order'))
 
     return render_template('fleet_manager/assign_work_order.html',
-                           work_orders=work_orders, drivers=drivers, vehicles=vehicles, user=current_user)
+                           work_orders=work_orders,
+                           drivers=drivers,
+                           vehicles=vehicles,
+                           user=current_user)
 
 # View all work orders and their assignments
 @views.route('/work-orders')

@@ -43,7 +43,7 @@
               <button type="submit" class="btn btn-warning btn-sm">Mark In Progress</button>
             </form>
             {% endif %}
-            <form action="{{ url_for('views.complete_work_order', assignment_id=a.id) }}" method="post">
+            <form action="{{ url_for('views.update_assignment_status', assignment_id=a.id, new_status='Completed') }}" method="post">
               <button type="submit" class="btn btn-success btn-sm">Mark Complete</button>
             </form>
           </td>
