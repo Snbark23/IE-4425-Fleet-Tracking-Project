@@ -103,8 +103,27 @@ class MaintenanceEvent(db.Model):
     maintenance_date = db.Column(db.Date)
     cost = db.Column(db.Float)
 
+
 class Document(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     filename = db.Column(db.String(255), nullable=False)
     uploaded_by = db.Column(db.Integer, db.ForeignKey('user.id'))
     upload_date = db.Column(db.DateTime(timezone=True), server_default=func.now())
+
+class DecommissionedVehicle(db.Model):
+    __tablename__ = 'decommissioned_vehicle'
+    __table_args__ = {'extend_existing': True}
+
+    id = db.Column(db.Integer, primary_key=True)
+    vin = db.Column(db.String(17))
+    make = db.Column(db.String(50))
+    model = db.Column(db.String(50))
+    year = db.Column(db.Integer)
+    engine_type = db.Column(db.String(50))
+    displacement = db.Column(db.String(50))
+    cylinders = db.Column(db.Integer)
+    fuel_type = db.Column(db.String(50))
+    sale_price = db.Column(db.Float)
+    salvage_value = db.Column(db.Float)
+    money_received = db.Column(db.Float)
+    decommission_date = db.Column(db.DateTime, server_default=func.now())

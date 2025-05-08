@@ -1,18 +1,66 @@
-{% extends "base.html" %}
-{% block title %}Vehicle Decommission{% endblock %}
-{% block content %}
-<div class="container mt-4">
-  <h2 class="text-center">Decommission Vehicle</h2>
-  <form method="POST" class="mt-4">
-    <div class="form-group">
-      <label>Select Vehicle</label>
-      <select name="vehicle_id" class="form-control">
-        {% for v in vehicles %}
-        <option value="{{ v.id }}">{{ v.vin }} - {{ v.make }} {{ v.model }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    <button type="submit" class="btn btn-danger">Decommission</button>
-  </form>
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Decommission Vehicle Form -->
+<div class="card shadow mb-4">
+  <div class="card-header bg-warning text-dark font-weight-bold">
+    <i class="fas fa-car-crash mr-1"></i> Decommission Vehicle
+  </div>
+  <div class="card-body">
+    <form method="POST">
+      <div class="form-row">
+        <div class="form-group col-md-4">
+          <label>Sale Price ($)</label>
+          <input type="number" step="0.01" name="sale_price" class="form-control" required>
+        </div>
+        <div class="form-group col-md-4">
+          <label>Salvage Value ($)</label>
+          <input type="number" step="0.01" name="salvage_value" class="form-control" required>
+        </div>
+        <div class="form-group col-md-4">
+          <label>Money Received ($)</label>
+          <input type="number" step="0.01" name="money_received" class="form-control" required>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-warning text-dark font-weight-bold">
+        <i class="fas fa-check-circle mr-1"></i> Confirm Decommission
+      </button>
+    </form>
+  </div>
 </div>
-{% endblock %}
+
+<!-- Decommission History Table -->
+<div class="card shadow mb-4">
+  <div class="card-header bg-dark text-white font-weight-bold">
+    <i class="fas fa-history mr-1"></i> Decommission History
+  </div>
+  <div class="card-body table-responsive">
+    <table class="table table-bordered table-striped text-center">
+      <thead class="thead-dark">
+        <tr>
+          <th>VIN</th>
+          <th>Make</th>
+          <th>Model</th>
+          <th>Year</th>
+          <th>Sale Price ($)</th>
+          <th>Salvage Value ($)</th>
+          <th>Money Received ($)</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for record in history %}
+        <tr>
+          <td>{{ record.vin }}</td>
+          <td>{{ record.make }}</td>
+          <td>{{ record.model }}</td>
+          <td>{{ record.year }}</td>
+          <td>${{ '%.2f'|format(record.sale_price) }}</td>
+          <td>${{ '%.2f'|format(record.salvage_value) }}</td>
+          <td>${{ '%.2f'|format(record.money_received) }}</td>
+          <td>{{ record.decommission_date.strftime('%Y-%m-%d') }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>

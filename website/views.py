@@ -10,7 +10,7 @@ import os
 from werkzeug.utils import secure_filename
 from flask import send_from_directory
 from .models import Document, WorkAssignment, WorkOrder
-from .models import User, Vehicle, VehicleAssignment, FuelLog, IncidentReport, AccidentReport, MileageLog, MaintenanceEvent, WorkAssignment
+from .models import User, Vehicle, VehicleAssignment, FuelLog, IncidentReport, AccidentReport, MileageLog, MaintenanceEvent, WorkAssignment, DecommissionedVehicle
 
 
 views = Blueprint('views', __name__)
@@ -147,20 +147,6 @@ def vehicle_registration():
 
     return render_template('fleet_manager/vehicle_registration.html', user=current_user)
 
-@views.route('/vehicle-decommission', methods=['GET', 'POST'])
-@login_required
-@role_required('Fleet Manager')
-def vehicle_decommission():
-    vehicles = Vehicle.query.all()
-    if request.method == 'POST':
-        vehicle_id = request.form.get('vehicle_id')
-        vehicle = Vehicle.query.get(vehicle_id)
-        if vehicle:
-            db.session.delete(vehicle)
-            db.session.commit()
-            flash('Vehicle decommissioned.', 'success')
-    return render_template('fleet_manager/vehicle_decommission.html', vehicles=vehicles, user=current_user)
-
 # Create a new work order
 @views.route('/create-work-order', methods=['GET', 'POST'])
 @login_required
@@ -260,6 +246,20 @@ def fleet_status_overview():
     assignments = WorkAssignment.query.all()
     return render_template('fleet_manager/fleet_status_overview.html', assignments=assignments, user=current_user)
 
+@views.route('/vehicle_decommision', methods=['GET', 'POST'])
+@login_required
+@role_required('Fleet Manager')
+def vehicle_decommission():
+    vehicles = Vehicle.query.all()
+    if request.method == 'POST':
+        vehicle_id = request.form.get('vehicle_id')
+        vehicle = Vehicle.query.get(vehicle_id)
+        if vehicle:
+            db.session.delete(vehicle)
+            db.session.commit()
+            flash('Vehicle decommissioned.', 'success')
+    return render_template('fleet_manager/vehicle_decommission.html', vehicles=vehicles, user=current_user)
+
 # Driver Employee
 @views.route('/driver-portal')
 @login_required
@@ -282,19 +282,33 @@ def driver_employee():
 # Driver Portal
 @views.route('/my-assignments')
 @login_required
-@role_required('Driver Employee')
-def driver_assignments():
+def my_assignments():
     active_assignments = WorkAssignment.query.filter(
-    WorkAssignment.driver_id == current_user.id,
-    WorkAssignment.status.in_(['Assigned', 'In Progress'])
+        WorkAssignment.driver_id == current_user.id,
+        WorkAssignment.status.in_(['Assigned', 'In Progress'])
     ).all()
     completed_assignments = WorkAssignment.query.filter_by(
         driver_id=current_user.id, status='Completed'
     ).all()
-    return render_template('driver_employee/my_assignments.html',
-                            active_assignments=active_assignments, 
-                            completed_assignments=completed_assignments, 
-                            user=current_user)
+
+    if current_user.role == "Driver Employee":
+        return render_template(
+            'driver_employee/my_assignments.html',
+            active_assignments=active_assignments,
+            completed_assignments=completed_assignments,
+            user=current_user
+        )
+    elif current_user.role == "Clerical Employee":
+        return render_template(
+            'clerical_employee/my_assignments.html',
+            active_assignments=active_assignments,
+            completed_assignments=completed_assignments,
+            user=current_user
+        )
+    else:
+        flash("Unauthorized role for this page.", "danger")
+        return redirect(url_for('views.home'))
+
 
 @views.route('/update-assignment-status/<int:assignment_id>/<new_status>', methods=['POST'])
 @login_required
@@ -309,7 +323,15 @@ def update_assignment_status(assignment_id, new_status):
     db.session.commit()
 
     flash(f"Status updated to {new_status}", "success")
-    return redirect(request.referrer or url_for('views.home'))
+
+    # Redirect based on role
+    if current_user.role == "Driver Employee":
+        return redirect(url_for('views.my_assignments'))
+    elif current_user.role == "Clerical Employee":
+        return redirect(url_for('views.my_assignments'))
+    else:
+        return redirect(url_for('views.home'))
+
 
 @views.route('/fuel-log', methods=['GET', 'POST'])
 @login_required
@@ -400,24 +422,6 @@ def clerical_employee():
                            documents_uploaded=documents_uploaded)
 
 # Clerical Employee Route
-@views.route('/my-assignments')
-@login_required
-@role_required('Clerical Employee')
-def clerical_assignments():
-    active_assignments = WorkAssignment.query.filter(
-        WorkAssignment.driver_id == current_user.id,
-        WorkAssignment.status.in_(['Assigned', 'In Progress'])
-    ).all()
-    completed_assignments = WorkAssignment.query.filter_by(
-        driver_id=current_user.id, status='Completed'
-    ).all()
-    return render_template(
-        'clerical_employee/my_assignments.html',
-        active_assignments=active_assignments,
-        completed_assignments=completed_assignments,
-        user=current_user
-    )
-
 @views.route('/maintenance-events', methods=['GET', 'POST'])
 @login_required
 @role_required('Clerical Employee')
@@ -503,25 +507,7 @@ def profile():
 
     return render_template('profile.html', user=current_user)
 
-@views.route('/complete-work-order/<int:assignment_id>', methods=['POST'])
-@login_required
-def complete_work_order(assignment_id):
-    assignment = WorkAssignment.query.get_or_404(assignment_id)
-
-    # Only allow the assigned driver or clerical employee to close
-    if assignment.driver_id != current_user.id:
-        flash("You are not authorized to close this assignment.", "danger")
-        return redirect(url_for('views.home'))
-
-    assignment.status = 'Completed'
-    assignment.closed_by = current_user.id
-    assignment.closed_at = datetime.utcnow()
-    db.session.commit()
-
-    flash("Work order marked as complete.", "success")
-    return redirect(url_for('views.home'))
-
-
 @views.app_errorhandler(403)
 def forbidden(e):
-    return render_template('403.html'), 403
+    return render_template('403.html', user=current_user), 403
+
