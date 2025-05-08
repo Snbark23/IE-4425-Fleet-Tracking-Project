@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -11,7 +10,6 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-
 </head>
 <body>
   <!-- Navbar -->
@@ -30,13 +28,13 @@
       <ul class="navbar-nav">
         {% if current_user.is_authenticated %}
           <li class="nav-item"><a class="nav-link" href="{{ url_for('views.profile') }}">Profile</a></li>
-          {% if user.role == 'Fleet Manager' %}
+          {% if current_user.role == 'Fleet Manager' %}
             <li class="nav-item"><a class="nav-link" href="{{ url_for('views.fleet_manager') }}">Fleet Manager Portal</a></li>
-          {% elif user.role == 'Driver Employee' %}
+          {% elif current_user.role == 'Driver Employee' %}
             <li class="nav-item"><a class="nav-link" href="{{ url_for('views.driver_employee') }}">Driver Employee Portal</a></li>
-          {% elif user.role == 'Clerical Employee' %}
+          {% elif current_user.role == 'Clerical Employee' %}
             <li class="nav-item"><a class="nav-link" href="{{ url_for('views.clerical_employee') }}">Clerical Employee Portal</a></li>
-          {% elif user.role == 'HR Admin' %}
+          {% elif current_user.role == 'HR Admin' %}
             <li class="nav-item"><a class="nav-link" href="{{ url_for('views.hr_admin') }}">HR Admin Portal</a></li>
           {% endif %}
           <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.logout') }}">Logout</a></li>

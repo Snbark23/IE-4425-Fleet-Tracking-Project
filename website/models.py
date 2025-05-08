@@ -93,13 +93,6 @@ class AccidentReport(db.Model):
     damage_estimate = db.Column(db.Float)
     date = db.Column(db.Date, default=func.now())
 
-class MileageLog(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    vehicle_id = db.Column(db.Integer, db.ForeignKey('vehicle.id'))
-    driver_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    miles_driven = db.Column(db.Float)
-    date = db.Column(db.Date, default=func.now())
-
 # Clerical Employee
 class MaintenanceEvent(db.Model):
     id = db.Column(db.Integer, primary_key=True)

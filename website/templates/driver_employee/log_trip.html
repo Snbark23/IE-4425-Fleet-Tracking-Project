@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}Log Trip{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-10">
+
+      <!-- Log Trip Form -->
+      <div class="card shadow-lg mb-4">
+        <div class="card-header bg-primary text-white text-center">
+          <h4 class="mb-0">Log Fuel + Mileage</h4>
+        </div>
+        <div class="card-body">
+          <form method="POST">
+            <div class="mb-3">
+              <label for="vehicle_id" class="form-label">Select Vehicle</label>
+              <select name="vehicle_id" id="vehicle_id" class="form-select" required>
+                {% for vehicle in vehicles %}
+                  <option value="{{ vehicle.id }}">{{ vehicle.make }} {{ vehicle.model }} ({{ vehicle.vin }})</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="gallons" class="form-label">Gallons Filled</label>
+                <input type="number" name="gallons" id="gallons" class="form-control" step="0.01" required>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="cost" class="form-label">Total Cost ($)</label>
+                <input type="number" name="cost" id="cost" class="form-control" step="0.01" required>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-4 mb-3">
+                <label for="start_mileage" class="form-label">Start Mileage</label>
+                <input type="number" name="start_mileage" id="start_mileage" class="form-control" step="0.1" readonly>
+              </div>
+              <div class="col-md-4 mb-3">
+                <label for="end_mileage" class="form-label">End Mileage</label>
+                <input type="number" name="end_mileage" id="end_mileage" class="form-control" step="0.1" required>
+              </div>
+              <div class="col-md-4 mb-3">
+                <label for="miles_driven" class="form-label">Miles Driven</label>
+                <input type="number" name="miles_driven" id="miles_driven" class="form-control" step="0.1" readonly>
+              </div>
+            </div>
+
+            <div class="text-center">
+              <button type="submit" class="btn btn-success">Submit Entry</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Trip Log History -->
+      <div class="card shadow-sm">
+        <div class="card-header bg-dark text-white text-center">
+          <h5 class="mb-0">Trip Log History</h5>
+        </div>
+        <ul class="list-group list-group-flush">
+          {% for log in logs %}
+          <li class="list-group-item">
+            <strong>{{ log.date.strftime('%Y-%m-%d') }}</strong> —
+            {{ log.gallons }} gal @ ${{ log.cost }} <br>
+            Mileage: {{ log.start_mileage }} → {{ log.end_mileage }} ({{ log.miles_driven }} mi) <br>
+            <span class="text-muted">Vehicle ID: {{ log.vehicle_id }}</span>
+          </li>
+          {% else %}
+          <li class="list-group-item text-muted text-center">No trip logs available.</li>
+          {% endfor %}
+        </ul>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block javascript %}
+<script>
+  const endInput = document.getElementById('end_mileage');
+  const startInput = document.getElementById('start_mileage');
+  const milesInput = document.getElementById('miles_driven');
+
+  endInput.addEventListener('input', () => {
+    const start = parseFloat(startInput.value);
+    const end = parseFloat(endInput.value);
+    if (!isNaN(start) && !isNaN(end)) {
+      milesInput.value = (end - start).toFixed(1);
+    }
+  });
+
+  document.getElementById('vehicle_id').addEventListener('change', async (e) => {
+    const vehicleId = e.target.value;
+    const res = await fetch(`/get_last_mileage/${vehicleId}`);
+    const data = await res.json();
+    startInput.value = data.last_mileage || 0;
+    milesInput.value = '';
+    endInput.value = '';
+  });
+</script>
+{% endblock %}

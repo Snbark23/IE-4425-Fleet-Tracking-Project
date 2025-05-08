@@ -1,4 +1,3 @@
-
 {% extends "base.html" %}
 {% block title %}Driver Employee Portal{% endblock %}
 {% block content %}
@@ -10,7 +9,7 @@
   <div class="card-body">
     <div class="row text-center">
       {% set kpis = [
-        ('Fuel Logs', fuel_logs, 'fas fa-gas-pump', 'Total fuel logs submitted'),
+        ('Trip Logs', fuel_logs, 'fas fa-gas-pump', 'Total logs submitted'),
         ('Fuel Cost ($)', "%.2f"|format(fuel_cost), 'fas fa-dollar-sign', 'Total spent on fuel'),
         ('Miles Driven', "%.1f"|format(miles), 'fas fa-road', 'Total miles logged'),
         ('Incidents', incidents, 'fas fa-tools', 'Minor issues (e.g. popped tire)'),
@@ -34,11 +33,26 @@
   <div class="card-header bg-dark text-white"><strong>Quick Actions</strong></div>
   <div class="card-body">
     <div class="row text-center">
-      <div class="col-md-3 mb-2"><a href="/my-assignments" class="btn btn-outline-info w-100"><i class="fas fa-clipboard-list mr-1"></i> My Assignments</a></div>      
-      <div class="col-md-3 mb-2"><a href="/fuel-log" class="btn btn-success w-100"><i class="fas fa-gas-pump mr-1"></i> Submit Fuel Log</a></div>
-      <div class="col-md-3 mb-2"><a href="/mileage-log" class="btn btn-primary w-100"><i class="fas fa-ruler mr-1"></i> Submit Mileage</a></div>
-      <div class="col-md-3 mb-2"><a href="/incident-report" class="btn btn-warning w-100"><i class="fas fa-tools mr-1"></i> Report Incident</a></div>
-      <div class="col-md-3 mb-2"><a href="/accident-report" class="btn btn-danger w-100"><i class="fas fa-car-crash mr-1"></i> Report Accident</a></div>
+      <div class="col-md-3 mb-2">
+        <a href="{{ url_for('views.my_assignments') }}" class="btn btn-outline-info w-100">
+          <i class="fas fa-clipboard-list mr-1"></i> My Assignments
+        </a>
+      </div>      
+      <div class="col-md-3 mb-2">
+        <a href="{{ url_for('views.log_trip') }}" class="btn btn-success w-100">
+          <i class="fas fa-route mr-1"></i> Log Trip
+        </a>
+      </div>
+      <div class="col-md-3 mb-2">
+        <a href="{{ url_for('views.incident_report') }}" class="btn btn-warning w-100">
+          <i class="fas fa-tools mr-1"></i> Report Incident
+        </a>
+      </div>
+      <div class="col-md-3 mb-2">
+        <a href="{{ url_for('views.accident_report') }}" class="btn btn-danger w-100">
+          <i class="fas fa-car-crash mr-1"></i> Report Accident
+        </a>
+      </div>
     </div>
   </div>
 </div>

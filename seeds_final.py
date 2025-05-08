@@ -2,18 +2,21 @@ import sys
 import os
 from faker import Faker
 import random
-from datetime import datetime
+from datetime import datetime, timedelta
 from werkzeug.security import generate_password_hash
 
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 
 from website import create_app, db
-from website.models import User, Vehicle, WorkOrder, FuelLog, MileageLog
+from website.models import User, Vehicle, WorkOrder, FuelLog, VehicleAssignment
 
 app = create_app()
 fake = Faker()
 
 with app.app_context():
+    db.drop_all()
+    db.create_all()
+
     # === Add 1 user per core role ===
     users = [
         User(first_name="Holly", last_name="Admin", email="hr@fleet.com", role="HR Admin",
@@ -27,15 +30,12 @@ with app.app_context():
     ]
 
     for user in users:
-        if not User.query.filter_by(email=user.email).first():
-            db.session.add(user)
-
+        db.session.add(user)
     db.session.commit()
 
-    # Get driver_id for Riley
     driver = User.query.filter_by(email="driver@fleet.com").first()
 
-    # === Add 50 vehicles ===
+    # === Add 50 vehicles and assign them to the driver ===
     makes = ['Ford', 'Toyota', 'Chevy', 'Nissan', 'Honda']
     models = ['F-150', 'Camry', 'Silverado', 'Altima', 'Civic']
 
@@ -44,9 +44,13 @@ with app.app_context():
         make = random.choice(makes)
         model = random.choice(models)
         vin = fake.unique.bothify(text='???#####??###???')
-        v = Vehicle(make=make, model=model, vin=vin, owner_id=driver.id)
-        db.session.add(v)
-        vehicles.append(v)
+        vehicle = Vehicle(make=make, model=model, vin=vin, owner_id=driver.id)
+        db.session.add(vehicle)
+        db.session.flush()  # Needed to get vehicle.id before commit
+        vehicles.append(vehicle)
+
+        assignment = VehicleAssignment(vehicle_id=vehicle.id, driver_id=driver.id)
+        db.session.add(assignment)
 
     db.session.commit()
 
@@ -57,14 +61,14 @@ with app.app_context():
         scheduled = fake.date_time_this_year()
         db.session.add(WorkOrder(title=title, description=description, scheduled_date=scheduled, created_at=scheduled))
 
-    # === Add 50 fuel logs with mileage ===
+    # === Add 50 unified Fuel + Mileage logs ===
     for _ in range(50):
         vehicle = random.choice(vehicles)
         gallons = round(random.uniform(5, 25), 2)
         cost = round(gallons * random.uniform(2.5, 4.0), 2)
-        start_mileage = round(random.uniform(5000, 9000), 1)
+        start_mileage = round(random.uniform(10000, 15000), 1)
         end_mileage = start_mileage + round(random.uniform(10, 300), 1)
-        miles_driven = end_mileage - start_mileage
+        miles_driven = round(end_mileage - start_mileage, 1)
         date = fake.date_time_this_year()
 
         db.session.add(FuelLog(
@@ -78,12 +82,5 @@ with app.app_context():
             date=date
         ))
 
-    # === Add 50 mileage logs ===
-    for _ in range(50):
-        vehicle = random.choice(vehicles)
-        miles = round(random.uniform(10, 300), 1)
-        date = fake.date_time_this_year()
-        db.session.add(MileageLog(vehicle_id=vehicle.id, miles_driven=miles, date=date, driver_id=driver.id))
-
     db.session.commit()
-    print("Added 4 use-case users + 50 vehicles, work orders, fuel logs (with mileage), and mileage logs.")
+    print("Seeded: 4 users, 50 vehicles + assignments, 50 work orders, and 50 trip logs.")
