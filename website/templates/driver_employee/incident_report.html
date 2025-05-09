@@ -1,6 +1,16 @@
 {% extends "base.html" %}
 {% block title %}Incident Report{% endblock %}
 {% block content %}
+<h2>Incident Report</h2>
+<div class="alert alert-warning mt-3">
+  <strong>What qualifies as an incident?</strong><br>
+  Incidents are single-party vehicle issues such as:
+  <ul class="mb-0">
+    <li>Popped tires</li>
+    <li>Scratches or dents</li>
+    <li>Broken mirrors or lights (not caused by collisions)</li>
+  </ul>
+</div>
 <div class="container mt-4">
   <h2>Incident Report</h2>
   <form method="POST" class="mb-4">

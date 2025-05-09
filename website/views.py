@@ -5,6 +5,8 @@ from sqlalchemy import func
 from website import db
 from werkzeug.utils import secure_filename
 import os
+from flask import send_from_directory
+
 
 from .models import (
     User, Vehicle, VehicleAssignment, WorkOrder, FuelLog,
@@ -290,6 +292,23 @@ def driver_employee():
                            miles=miles,
                            incidents=incidents,
                            accidents=accidents)
+
+@views.route('/update-assignment-status/<int:assignment_id>/<new_status>', methods=['POST'])
+@login_required
+def update_assignment_status(assignment_id, new_status):
+    assignment = WorkAssignment.query.get_or_404(assignment_id)
+    if assignment.driver_id != current_user.id and current_user.role != 'Clerical Employee':
+        abort(403)
+
+    assignment.status = new_status
+    if new_status == 'Completed':
+        assignment.closed_by = current_user.id
+        assignment.closed_at = datetime.utcnow()
+
+    db.session.commit()
+    flash(f"Assignment marked as {new_status}.", "success")
+    return redirect(url_for('views.my_assignments'))
+
 
 @views.route('/log-trip', methods=['GET', 'POST'])
 @login_required
