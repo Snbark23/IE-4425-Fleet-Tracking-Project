@@ -232,13 +232,46 @@ def calendar():
 @role_required('Fleet Manager')
 def vehicle_decommission():
     vehicles = Vehicle.query.all()
+    history = DecommissionedVehicle.query.order_by(DecommissionedVehicle.decommission_date.desc()).all()
+
     if request.method == 'POST':
-        vehicle = Vehicle.query.get(request.form.get('vehicle_id'))
-        if vehicle:
-            db.session.delete(vehicle)
-            db.session.commit()
-            flash('Vehicle decommissioned.', 'success')
-    return render_template('fleet_manager/vehicle_decommission.html', vehicles=vehicles)
+        vehicle_id = request.form.get('vehicle_id')
+        vehicle = Vehicle.query.get(vehicle_id)
+
+        if not vehicle:
+            flash('Vehicle not found.', 'danger')
+            return redirect(url_for('views.vehicle_decommission'))
+
+        # Prevent deletion if still assigned
+        if vehicle.work_assignments:
+            flash('Cannot decommission vehicle while it is still assigned to a work order.', 'danger')
+            return redirect(url_for('views.vehicle_decommission'))
+
+        # Record to history
+        decomm = DecommissionedVehicle(
+            vin=vehicle.vin,
+            make=vehicle.make,
+            model=vehicle.model,
+            year=vehicle.year,
+            engine_type=vehicle.engine_type,
+            displacement=vehicle.displacement,
+            cylinders=vehicle.cylinders,
+            fuel_type=vehicle.fuel_type,
+            sale_price=request.form.get('sale_price'),
+            salvage_value=request.form.get('salvage_value'),
+            money_received=request.form.get('money_received'),
+            reason=request.form.get('reason')
+        )
+        db.session.add(decomm)
+
+        # Delete from active fleet
+        db.session.delete(vehicle)
+        db.session.commit()
+        flash('Vehicle decommissioned and archived.', 'success')
+        return redirect(url_for('views.vehicle_decommission'))
+
+    return render_template('fleet_manager/vehicle_decommission.html', vehicles=vehicles, history=history)
+
 
 # Driver Employee
 @views.route('/driver-portal')
@@ -297,6 +330,43 @@ def get_last_mileage(vehicle_id):
         .order_by(FuelLog.date.desc()).first()
     return jsonify({'last_mileage': last_log.end_mileage if last_log else 0})
 
+@views.route('/incident-report', methods=['GET', 'POST'])
+@login_required
+@role_required('Driver Employee')
+def incident_report():
+    vehicles = Vehicle.query.all()
+    if request.method == 'POST':
+        report = IncidentReport(
+            vehicle_id=request.form.get('vehicle_id'),
+            driver_id=current_user.id,
+            description=request.form.get('description')
+        )
+        db.session.add(report)
+        db.session.commit()
+        flash('Incident reported successfully.', 'success')
+    incidents = IncidentReport.query.filter_by(driver_id=current_user.id).order_by(IncidentReport.date.desc()).all()
+    return render_template('driver_employee/incident_report.html', vehicles=vehicles, incidents=incidents)
+
+
+@views.route('/accident-report', methods=['GET', 'POST'])
+@login_required
+@role_required('Driver Employee')
+def accident_report():
+    vehicles = Vehicle.query.all()
+    if request.method == 'POST':
+        report = AccidentReport(
+            vehicle_id=request.form.get('vehicle_id'),
+            driver_id=current_user.id,
+            description=request.form.get('description'),
+            damage_estimate=request.form.get('damage_estimate')
+        )
+        db.session.add(report)
+        db.session.commit()
+        flash('Accident report submitted successfully.', 'success')
+    accidents = AccidentReport.query.filter_by(driver_id=current_user.id).order_by(AccidentReport.date.desc()).all()
+    return render_template('driver_employee/accident_report.html', vehicles=vehicles, accidents=accidents)
+
+
 # Clerical Employee Portal Dashboard
 @views.route('/clerical-portal')
 @login_required
@@ -337,6 +407,32 @@ def maintenance_events():
     events = MaintenanceEvent.query.all()
     return render_template('clerical_employee/maintenance_events.html',
                            vehicles=vehicles, events=events)
+
+@views.route('/view-maintenance', methods=['GET', 'POST'])
+@login_required
+@role_required('Clerical Employee')
+def view_maintenance():
+    vehicles = Vehicle.query.all()
+
+    if request.method == 'POST':
+        vehicle_id = request.form.get('vehicle_id')
+        description = request.form.get('description')
+        # Convert string to Python date object
+        maintenance_date = datetime.strptime(request.form.get('maintenance_date'), "%Y-%m-%d").date()
+        cost = float(request.form.get('cost'))
+
+        maintenance = MaintenanceEvent(
+            vehicle_id=vehicle_id,
+            description=description,
+            maintenance_date=maintenance_date,
+            cost=cost
+        )
+        db.session.add(maintenance)
+        db.session.commit()
+        flash('Maintenance event logged.', 'success')
+
+    events = MaintenanceEvent.query.order_by(MaintenanceEvent.maintenance_date.desc()).all()
+    return render_template('clerical_employee/maintenance_events.html', vehicles=vehicles, events=events)
 
 # Document Upload
 UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'uploads')

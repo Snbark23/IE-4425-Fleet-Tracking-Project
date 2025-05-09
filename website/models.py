@@ -10,7 +10,12 @@ class User(db.Model, UserMixin):
     first_name = db.Column(db.String(150))
     last_name = db.Column(db.String(150))
     role = db.Column(db.String(50))
+
     vehicles = db.relationship('Vehicle', backref='owner', lazy=True)
+
+    # Disambiguated relationships for WorkAssignment
+    driver_assignments = db.relationship('WorkAssignment', foreign_keys='WorkAssignment.driver_id', backref='driver_user', lazy=True)
+    closed_assignments = db.relationship('WorkAssignment', foreign_keys='WorkAssignment.closed_by', backref='closer_user', lazy=True)
 
 class Vehicle(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -49,8 +54,7 @@ class WorkAssignment(db.Model):
     work_order_id = db.Column(db.Integer, db.ForeignKey('work_order.id'), nullable=False)
     vehicle_id = db.Column(db.Integer, db.ForeignKey('vehicle.id'), nullable=False)
 
-    # One relationship per field, with foreign_keys clarified when needed
-    driver = db.relationship('User', foreign_keys=[driver_id], backref='work_assignments')
+    driver = db.relationship('User', foreign_keys=[driver_id])
     closer = db.relationship('User', foreign_keys=[closed_by])
     work_order = db.relationship('WorkOrder', backref='assignments')
     vehicle = db.relationship('Vehicle', backref='work_assignments')
@@ -62,7 +66,6 @@ class WorkAssignment(db.Model):
         db.UniqueConstraint('work_order_id', 'driver_id', name='unique_driver_assignment'),
         db.UniqueConstraint('work_order_id', 'vehicle_id', name='unique_vehicle_assignment'),
     )
-
 
 # Driver Employee
 class FuelLog(db.Model):
@@ -76,7 +79,6 @@ class FuelLog(db.Model):
     start_mileage = db.Column(db.Float)
     end_mileage = db.Column(db.Float)
     miles_driven = db.Column(db.Float)
-
 
 class IncidentReport(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -100,7 +102,7 @@ class MaintenanceEvent(db.Model):
     description = db.Column(db.Text)
     maintenance_date = db.Column(db.Date)
     cost = db.Column(db.Float)
-
+    vehicle = db.relationship('Vehicle') 
 
 class Document(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -121,5 +123,5 @@ class DecommissionedVehicle(db.Model):
     sale_price = db.Column(db.Float)
     salvage_value = db.Column(db.Float)
     money_received = db.Column(db.Float)
-    reason = db.Column(db.Text)  # ← Add this line
+    reason = db.Column(db.Text)
     decommission_date = db.Column(db.DateTime, server_default=func.now())
